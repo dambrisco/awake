@@ -1,0 +1,27 @@
+#!/bin/bash
+"exec" "jython" "$0" "$@"
+
+from java.awt import MouseInfo, Robot
+from java.lang import Thread
+
+
+def main():
+    print("Staying awake")
+
+    robot = Robot()
+    info = MouseInfo.getPointerInfo()
+    last = info.getLocation()
+    robot.setAutoWaitForIdle(True)
+
+    while(True):
+        info = MouseInfo.getPointerInfo()
+        point = info.getLocation()
+        if(last.equals(point)):
+            x = int(point.getX()) + 1
+            y = int(point.getY()) + 1
+            robot.mouseMove(x, y)
+            robot.mouseMove(int(point.getX()), int(point.getY()))
+        last = point
+        Thread.sleep(500)
+
+main()
