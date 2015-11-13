@@ -3,17 +3,54 @@
 
 from java.awt import MouseInfo, Robot
 from java.lang import Thread
+from argparse import ArgumentParser, RawTextHelpFormatter
+from time import time
+from datetime import timedelta
+from sys import exit
+from sys.stdout import write, flush
+from signal import signal, SIGINT
+
+
+initial_time = time()
+duration = None
 
 
 def main():
-    print("Staying awake")
+    signal(SIGINT, ctrlc)
+    parser = ArgumentParser(
+        prog='awake',
+        description='Keeps your computer awake using miniscule mouse movements'
+        + '\nRuns indefinitely by default but may be provided a specific amount'
+        + ' of time to lapse',
+        conflict_handler='resolve',
+        formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--hours', '-H', type=int, default=0,
+                        help='number of hours')
+    parser.add_argument('--minutes', '-M', type=int, default=0,
+                        help='number of minutes')
+    parser.add_argument('--seconds', '-S', type=int, default=0,
+                        help='number of seconds')
+    args = parser.parse_args()
+    if (args.hours is None and args.minutes is None and args.seconds is None):
+        print 'Running indefinitely'
+    else:
+        duration = int(args.hours * 60 * 60 + args.minutes * 60 + args.seconds)
+        print (
+            'Running for: {:0>8}'
+            .format(timedelta(seconds=duration)))
 
+    update_time()
     robot = Robot()
     info = MouseInfo.getPointerInfo()
     last = info.getLocation()
     robot.setAutoWaitForIdle(True)
 
     while(True):
+        update_time()
+        if (time() >= duration + initial_time):
+            update_time()
+            ctrlc()
+
         info = MouseInfo.getPointerInfo()
         point = info.getLocation()
         if(last.equals(point)):
@@ -21,7 +58,20 @@ def main():
             y = int(point.getY()) + 1
             robot.mouseMove(x, y)
             robot.mouseMove(int(point.getX()), int(point.getY()))
+
         last = point
-        Thread.sleep(500)
+        Thread.sleep(250)
+
+
+def update_time():
+    write(
+        '\rAwake for: {:0>8}'
+        .format(timedelta(seconds=int(time() - initial_time))))
+    flush()
+
+
+def ctrlc(signal=None, frame=None):
+    print
+    exit(0)
 
 main()
