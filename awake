@@ -31,7 +31,8 @@ def main():
     parser.add_argument('--seconds', '-S', type=int, default=0,
                         help='number of seconds')
     args = parser.parse_args()
-    if (args.hours is None and args.minutes is None and args.seconds is None):
+    if (args.hours == 0 and args.minutes == 0 and args.seconds == 0):
+        duration = 0
         print 'Running indefinitely'
     else:
         duration = int(args.hours * 60 * 60 + args.minutes * 60 + args.seconds)
@@ -47,8 +48,7 @@ def main():
 
     while(True):
         update_time()
-        if (time() >= duration + initial_time):
-            update_time()
+        if (duration != 0 and time() >= duration + initial_time):
             ctrlc()
 
         info = MouseInfo.getPointerInfo()
@@ -71,6 +71,7 @@ def update_time():
 
 
 def ctrlc(signal=None, frame=None):
+    update_time()
     print
     exit(0)
 
