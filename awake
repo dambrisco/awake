@@ -13,15 +13,17 @@ from signal import signal, SIGINT
 
 initial_time = time()
 duration = None
+silent = False
 
 
 def main():
+    global initial_time, duration, silent
     signal(SIGINT, ctrlc)
     parser = ArgumentParser(
         prog='awake',
-        description='Keeps your computer awake using miniscule mouse movements'
-        + '\nRuns indefinitely by default but may be provided a specific amount'
-        + ' of time to lapse',
+        description='Keeps your computer awake using tiny mouse movements' +
+        '\nRuns indefinitely by default but may be provided a specific amount' +
+        ' of time to lapse',
         conflict_handler='resolve',
         formatter_class=RawTextHelpFormatter)
     parser.add_argument('--hours', '-H', type=int, default=0,
@@ -30,14 +32,15 @@ def main():
                         help='number of minutes')
     parser.add_argument('--seconds', '-S', type=int, default=0,
                         help='number of seconds')
+    parser.add_argument('--silent', '-s', action='store_true')
     args = parser.parse_args()
+    silent = args.silent
     if (args.hours == 0 and args.minutes == 0 and args.seconds == 0):
         duration = 0
-        print 'Running indefinitely'
+        log('Running indefinitely')
     else:
         duration = int(args.hours * 60 * 60 + args.minutes * 60 + args.seconds)
-        print (
-            'Running for: {:0>8}'
+        log('Running for: {:0>8}'
             .format(timedelta(seconds=duration)))
 
     update_time()
@@ -64,15 +67,25 @@ def main():
 
 
 def update_time():
-    write(
-        '\rAwake for: {:0>8}'
-        .format(timedelta(seconds=int(time() - initial_time))))
-    flush()
+    if not silent:
+        write(
+            '\rAwake for: {:0>8}'
+            .format(timedelta(seconds=int(time() - initial_time))))
+        flush()
 
 
 def ctrlc(signal=None, frame=None):
     update_time()
-    print
+    log('')
     exit(0)
 
-main()
+
+def log(s):
+    if not silent:
+        print s
+
+
+if __name__ == "__main__":
+    main()
+
+# vim: set ft=python:
