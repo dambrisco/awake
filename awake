@@ -22,8 +22,8 @@ def main():
     parser = ArgumentParser(
         prog='awake',
         description='Keeps your computer awake using tiny mouse movements' +
-        '\nRuns indefinitely by default but may be provided a specific amount' +
-        ' of time to lapse',
+        '\nRuns indefinitely by default but may be provided a specific' +
+        ' amount of time to lapse',
         conflict_handler='resolve',
         formatter_class=RawTextHelpFormatter)
     parser.add_argument('--hours', '-H', type=int, default=0,
@@ -63,7 +63,7 @@ def main():
             robot.mouseMove(int(point.getX()), int(point.getY()))
 
         last = point
-        Thread.sleep(250)
+        Thread.sleep(10000)
 
 
 def update_time():
@@ -82,7 +82,7 @@ def ctrlc(signal=None, frame=None):
 
 def log(s):
     if not silent:
-        print s
+        print(s)
 
 
 if __name__ == "__main__":
