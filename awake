@@ -43,39 +43,43 @@ def main():
         log('Running for: {:0>8}'
             .format(timedelta(seconds=duration)))
 
-    update_time()
     robot = Robot()
     info = MouseInfo.getPointerInfo()
-    last = info.getLocation()
+    last_time = time()
+    update_time(last_time)
+    last_location = info.getLocation()
     robot.setAutoWaitForIdle(True)
 
     while(True):
-        update_time()
+	current_time = time()
+        update_time(current_time)
         if (duration != 0 and time() >= duration + initial_time):
             ctrlc()
 
-        info = MouseInfo.getPointerInfo()
-        point = info.getLocation()
-        if(last.equals(point)):
-            x = int(point.getX()) + 1
-            y = int(point.getY()) + 1
-            robot.mouseMove(x, y)
-            robot.mouseMove(int(point.getX()), int(point.getY()))
+	if current_time >= (last_time + 10):
+            info = MouseInfo.getPointerInfo()
+            current_location = info.getLocation()
+            if(last_location.equals(current_location)):
+                x = int(current_location.getX())
+                y = int(current_location.getY())
+                robot.mouseMove(x + 1, y + 1)
+                robot.mouseMove(x, y)
+            last_location = current_location
+	    last_time = current_time
 
-        last = point
-        Thread.sleep(10000)
+        Thread.sleep(500)
 
 
-def update_time():
+def update_time(t):
     if not silent:
         write(
             '\rAwake for: {:0>8}'
-            .format(timedelta(seconds=int(time() - initial_time))))
+            .format(timedelta(seconds=int(t - initial_time))))
         flush()
 
 
 def ctrlc(signal=None, frame=None):
-    update_time()
+    update_time(time())
     log('')
     exit(0)
 
