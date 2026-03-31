@@ -1,5 +1,5 @@
 #!/bin/bash
-///bin/true; exec java --source 17 "$0" "$@"
+///bin/true; exec java --source 11 "$0" "$@"
 
 import java.awt.MouseInfo;
 import java.awt.Point;
