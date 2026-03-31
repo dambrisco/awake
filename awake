@@ -1,95 +1,124 @@
 #!/bin/bash
-"exec" "jython" "$0" "$@"
+///bin/true; exec java --source 17 "$0" "$@"
 
-from java.awt import MouseInfo, Robot
-from java.lang import Thread
-from argparse import ArgumentParser, RawTextHelpFormatter
-from time import time
-from datetime import timedelta
-from sys import exit
-from sys.stdout import write, flush
-from signal import signal, SIGINT
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.Robot;
 
+public class Awake {
+    private static long initialTime;
+    private static long duration;
+    private static boolean silent;
 
-initial_time = time()
-duration = None
-silent = False
+    public static void main(String[] args) throws Exception {
+        initialTime = System.currentTimeMillis();
+        duration = 0;
+        silent = false;
 
+        int hours = 0, minutes = 0, seconds = 0;
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "--hours": case "-H":
+                    hours = Integer.parseInt(args[++i]);
+                    break;
+                case "--minutes": case "-M":
+                    minutes = Integer.parseInt(args[++i]);
+                    break;
+                case "--seconds": case "-S":
+                    seconds = Integer.parseInt(args[++i]);
+                    break;
+                case "--silent": case "-s":
+                    silent = true;
+                    break;
+                case "--help": case "-h":
+                    printHelp();
+                    System.exit(0);
+                    break;
+                default:
+                    System.err.println("Unknown argument: " + args[i]);
+                    printHelp();
+                    System.exit(1);
+            }
+        }
 
-def main():
-    global initial_time, duration, silent
-    signal(SIGINT, ctrlc)
-    parser = ArgumentParser(
-        prog='awake',
-        description='Keeps your computer awake using tiny mouse movements' +
-        '\nRuns indefinitely by default but may be provided a specific' +
-        ' amount of time to lapse',
-        conflict_handler='resolve',
-        formatter_class=RawTextHelpFormatter)
-    parser.add_argument('--hours', '-H', type=int, default=0,
-                        help='number of hours')
-    parser.add_argument('--minutes', '-M', type=int, default=0,
-                        help='number of minutes')
-    parser.add_argument('--seconds', '-S', type=int, default=0,
-                        help='number of seconds')
-    parser.add_argument('--silent', '-s', action='store_true')
-    args = parser.parse_args()
-    silent = args.silent
-    if (args.hours == 0 and args.minutes == 0 and args.seconds == 0):
-        duration = 0
-        log('Running indefinitely')
-    else:
-        duration = int(args.hours * 60 * 60 + args.minutes * 60 + args.seconds)
-        log('Running for: {:0>8}'
-            .format(timedelta(seconds=duration)))
+        if (hours == 0 && minutes == 0 && seconds == 0) {
+            duration = 0;
+            log("Running indefinitely");
+        } else {
+            duration = hours * 3600L + minutes * 60L + seconds;
+            log("Running for: " + formatDuration(duration));
+        }
 
-    robot = Robot()
-    info = MouseInfo.getPointerInfo()
-    last_time = time()
-    update_time(last_time)
-    last_location = info.getLocation()
-    robot.setAutoWaitForIdle(True)
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            updateTime(System.currentTimeMillis());
+            log("");
+        }));
 
-    while(True):
-	current_time = time()
-        update_time(current_time)
-        if (duration != 0 and time() >= duration + initial_time):
-            ctrlc()
+        Robot robot = new Robot();
+        robot.setAutoWaitForIdle(true);
+        Point lastLocation = MouseInfo.getPointerInfo().getLocation();
+        long lastTime = System.currentTimeMillis();
+        updateTime(lastTime);
 
-	if current_time >= (last_time + 10):
-            info = MouseInfo.getPointerInfo()
-            current_location = info.getLocation()
-            if(last_location.equals(current_location)):
-                x = int(current_location.getX())
-                y = int(current_location.getY())
-                robot.mouseMove(x + 1, y + 1)
-                robot.mouseMove(x, y)
-            last_location = current_location
-	    last_time = current_time
+        while (true) {
+            long currentTime = System.currentTimeMillis();
+            updateTime(currentTime);
 
-        Thread.sleep(500)
+            if (duration != 0 && currentTime >= duration * 1000 + initialTime) {
+                System.exit(0);
+            }
 
+            if (currentTime >= lastTime + 10000) {
+                Point currentLocation = MouseInfo.getPointerInfo().getLocation();
+                if (lastLocation.equals(currentLocation)) {
+                    int x = (int) currentLocation.getX();
+                    int y = (int) currentLocation.getY();
+                    robot.mouseMove(x + 1, y + 1);
+                    robot.mouseMove(x, y);
+                }
+                lastLocation = currentLocation;
+                lastTime = currentTime;
+            }
 
-def update_time(t):
-    if not silent:
-        write(
-            '\rAwake for: {:0>8}'
-            .format(timedelta(seconds=int(t - initial_time))))
-        flush()
+            Thread.sleep(500);
+        }
+    }
 
+    private static String formatDuration(long totalSeconds) {
+        long h = totalSeconds / 3600;
+        long m = (totalSeconds % 3600) / 60;
+        long s = totalSeconds % 60;
+        return String.format("%02d:%02d:%02d", h, m, s);
+    }
 
-def ctrlc(signal=None, frame=None):
-    update_time(time())
-    log('')
-    exit(0)
+    private static void updateTime(long currentTime) {
+        if (!silent) {
+            long elapsed = (currentTime - initialTime) / 1000;
+            System.out.print("\rAwake for: " + formatDuration(elapsed));
+            System.out.flush();
+        }
+    }
 
+    private static void log(String s) {
+        if (!silent) {
+            System.out.println(s);
+        }
+    }
 
-def log(s):
-    if not silent:
-        print(s)
-
-
-if __name__ == "__main__":
-    main()
-
-# vim: set ft=python:
+    private static void printHelp() {
+        System.out.println("usage: awake [-h] [--hours HOURS] [--minutes MINUTES] [--seconds SECONDS] [--silent]");
+        System.out.println();
+        System.out.println("Keeps your computer awake using tiny mouse movements");
+        System.out.println("Runs indefinitely by default but may be provided a specific amount of time to lapse");
+        System.out.println();
+        System.out.println("options:");
+        System.out.println("  -h, --help            show this help message and exit");
+        System.out.println("  --hours HOURS, -H HOURS");
+        System.out.println("                        number of hours");
+        System.out.println("  --minutes MINUTES, -M MINUTES");
+        System.out.println("                        number of minutes");
+        System.out.println("  --seconds SECONDS, -S SECONDS");
+        System.out.println("                        number of seconds");
+        System.out.println("  --silent, -s");
+    }
+}
