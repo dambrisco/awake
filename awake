@@ -1,5 +1,5 @@
 #!/bin/bash
-///bin/sleep 0; exec java --source 11 "$0" "$@"
+///bin/sleep 0; exec java -Dapple.awt.UIElement=true --source 11 "$0" "$@"
 
 import java.awt.MouseInfo;
 import java.awt.Point;
